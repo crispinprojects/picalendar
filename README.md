@@ -16,7 +16,7 @@ Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/). T
 * built-in word concatenation speech synthesizer (date, time and event word speaker)
 * tested with Raspberry Pi 4
 
-### Local Install Using Prebuilt Binary
+### Prebuilt Binary
 
 A 64-bit prebuilt binary for the latest version of Pi Calendar is available and can be downloaded from the binary directory. This has been built using GTK 4.8 and tested with Raspberry Pi OS (64-bit) on a Pi 4. 
 
@@ -27,6 +27,18 @@ Extract the downloaded file which contains the picalendar executable. Assuming t
 ```
 
 or double click on the "picalendar" file. Pi Calendar must have executable permissions to execute. If it does not then right click on the Pi Calendar binary file and choose Properties->Permissions and tick allow "Executable as Program".
+
+### Create App Menu Launcher
+
+You can create a Pi Calendar launcher so that it can be run from the application menu.
+
+First create a directory in your home folder for the Pi Calendar application. For example, create a directory called "Software" in your home folder and then inside this a folder called "picalendar" e.g. ~/Software/picalendar. Copy the Pi Calendar executable and calendar.png image into this.
+
+Now launch the Main Menu Editor using "Preferences->Main Menu Editor" and create a new item as shown in the example below.
+
+![](picalendar-launcher.png)
+
+You can now run Pi Calendar from the system menu. You can also add the Pi Calendar launcher to the taskbar (launcher) or desktop by right clicking on it from within the Main Menu Editor. The calendar database will be stored in your home directory if using this approach.
 
 ## Calendar Usage
 
@@ -67,7 +79,7 @@ A screenshot of the new event dialog is shown below.
 
 You can use 12 hour format. Event end-times can also be shown in the list view. If notable dates is selected then the date label shows special calendar dates such as some UK public holidays. These are also spoken.
 
-GTK [ColorDialogButton](https://docs.gtk.org/gtk4/class.ColorDialogButton.html) was introduced with GTK 4.10 and so is not availible with GTK 4.8 used by Raspberry Pi OS and Debian Bookworm. Instead colours have to be entered manually using RGB values.
+GTK [ColorDialogButton](https://docs.gtk.org/gtk4/class.ColorDialogButton.html) was introduced with GTK 4.10 and so is not availible with GTK 4.8 which is used by Raspberry Pi OS and Debian Bookworm. Instead colours have to be entered manually using RGB values.You can use the w3Schools [RGB calcuator](https://www.w3schools.com/colors/colors_rgb.asp) for selecting a RGB colour.
 
 ## Talking
 
@@ -123,6 +135,8 @@ You need the GTK4 development libraries and the gcc compiler. The code has been 
 ```
 dpkg -l | grep libgtk*
 ```
+
+![](rpi-os-gtk4-libraries.png)
 
 To build Pi Calendar you also need the Sqlite3 development libraries. With Debian and Ubuntu you install these using the commands below.
 

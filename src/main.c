@@ -23,18 +23,18 @@
 //====================================================================
 
 #include <gtk/gtk.h>
+#include <ctype.h> //whitespace
+#include <glib/gstdio.h>  //needed for g_mkdir
+#include <math.h>  //compile with -lm
+
 #include "customcalendar.h"
 #include "calendarevent.h"
 #include "dbmanager.h"
 #include "displayitem.h"
-
-#include <glib/gstdio.h>  //needed for g_mkdir
-#include <math.h>  //compile with -lm
-
 #include "dictionary.h"
 
-#define CONFIG_DIRNAME "talkcalendar-rpi"
-#define CONFIG_FILENAME "talkcalendar-rpi"
+#define CONFIG_DIRNAME "pi-calendar"
+#define CONFIG_FILENAME "pi-calendar"
 static char * m_config_file = NULL;
 
 //Declarations
@@ -59,9 +59,21 @@ gboolean import_ical_file(gpointer user_data);
 
 gboolean file_exists(const char *file_name);
 
-//Actions
+//Callbks
 static void callbk_about(GSimpleAction* action, GVariant *parameter, gpointer user_data);
 static void callbk_info(GSimpleAction *action, GVariant *parameter,  gpointer user_data);
+
+static void callbk_spin_button_today_red(GtkSpinButton *button, gpointer user_data);
+static void callbk_spin_button_today_green(GtkSpinButton *button, gpointer user_data);
+static void callbk_spin_button_today_blue(GtkSpinButton *button, gpointer user_data);
+
+static void callbk_spin_button_event_red(GtkSpinButton *button, gpointer user_data);
+static void callbk_spin_button_event_green(GtkSpinButton *button, gpointer user_data);
+static void callbk_spin_button_event_blue(GtkSpinButton *button, gpointer user_data);
+
+static void callbk_spin_button_holiday_red(GtkSpinButton *button, gpointer user_data);
+static void callbk_spin_button_holiday_green(GtkSpinButton *button, gpointer user_data);
+static void callbk_spin_button_holiday_blue(GtkSpinButton *button, gpointer user_data);
 
 static void callbk_set_preferences(GtkButton *button, gpointer  user_data);
 static void callbk_preferences(GSimpleAction* action, GVariant *parameter,gpointer user_data);
@@ -127,6 +139,8 @@ static char* remove_explanation_marks (const char *text);
 static char* remove_punctuations(const char *text);
 static char* replace_hypens(const char *text);
 static char* replace_newlines(const char *text);
+
+char *trim_whitespace(char *s);
 
 static int first_day_of_month(int month, int year);
 
@@ -235,6 +249,18 @@ static int m_is_allday=0;
 static  char* m_todaycolour="rgb(173,216,230)";
 static  char* m_eventcolour="rgb(222,184,135)";
 static char* m_holidaycolour="rgb(102,205,170)"; 
+
+static int m_today_red=173;
+static int m_today_green=216;
+static int m_today_blue =230;
+
+static int m_event_red=222;
+static int m_event_green=184;
+static int m_event_blue=135;
+
+static int m_holiday_red=102;
+static int m_holiday_green=205;
+static int m_holiday_blue=170;
 
 //Speaking
 //talk preferences
@@ -542,6 +568,18 @@ static void config_load_default()
 	m_todaycolour="rgb(173,216,230)";
 	m_eventcolour="rgb(222,184,135)";
 	m_holidaycolour="rgb(102,205,170)";
+	
+	m_today_red=173;
+	m_today_green=216;
+	m_today_blue =230;
+	
+	m_event_red=222;
+	m_event_green=184;
+	m_event_blue=135;
+	
+	m_holiday_red=102;
+	m_holiday_green=205;
+	m_holiday_blue=170;
 }
 
 //======================================================================
@@ -572,6 +610,18 @@ static void config_read()
 	m_eventcolour="rgb(222,184,135)";
 	m_holidaycolour="rgb(102,205,170)";
 	
+	m_today_red=173;
+	m_today_green=216;
+	m_today_blue =230;
+	
+	m_event_red=222;
+	m_event_green=184;
+	m_event_blue=135;
+	
+	m_holiday_red=102;
+	m_holiday_green=205;
+	m_holiday_blue=170;
+	
 	
 	// Load keys from keyfile
 	GKeyFile * kf = g_key_file_new();
@@ -597,6 +647,18 @@ static void config_read()
 	m_todaycolour=g_key_file_get_string(kf, "calendar_settings", "todaycolour", NULL);
     m_eventcolour=g_key_file_get_string(kf, "calendar_settings", "eventcolour", NULL);
     m_holidaycolour=g_key_file_get_string(kf, "calendar_settings", "holidaycolour", NULL);
+    
+    m_today_red=g_key_file_get_integer(kf, "calendar_settings", "today_red", NULL);
+	m_today_green=g_key_file_get_integer(kf, "calendar_settings", "today_green", NULL);
+	m_today_blue =g_key_file_get_integer(kf, "calendar_settings", "today_blue", NULL);
+	
+	m_event_red=g_key_file_get_integer(kf, "calendar_settings", "event_red", NULL);
+	m_event_green=g_key_file_get_integer(kf, "calendar_settings", "event_green", NULL);
+	m_event_blue=g_key_file_get_integer(kf, "calendar_settings", "event_blue", NULL);
+	
+	m_holiday_red=g_key_file_get_integer(kf, "calendar_settings", "holiday_red", NULL);
+	m_holiday_green=g_key_file_get_integer(kf, "calendar_settings", "holiday_green", NULL);
+	m_holiday_blue=g_key_file_get_integer(kf, "calendar_settings", "holiday_blue", NULL);
     
     m_window_width = g_key_file_get_integer(kf, "calendar_settings", "window_width", NULL);
 	m_window_height=g_key_file_get_integer(kf, "calendar_settings", "window_height", NULL);
@@ -630,6 +692,18 @@ void config_write()
 	g_key_file_set_string(kf, "calendar_settings", "todaycolour", m_todaycolour);
 	g_key_file_set_string(kf, "calendar_settings", "eventcolour", m_eventcolour);
 	g_key_file_set_string(kf, "calendar_settings", "holidaycolour", m_holidaycolour);
+	
+	g_key_file_set_integer(kf, "calendar_settings", "today_red", m_today_red);
+	g_key_file_set_integer(kf, "calendar_settings", "today_green", m_today_green);
+	g_key_file_set_integer(kf, "calendar_settings", "today_blue", m_today_blue);
+	
+	g_key_file_set_integer(kf, "calendar_settings", "event_red", m_event_red);
+	g_key_file_set_integer(kf, "calendar_settings", "event_green", m_event_green);
+	g_key_file_set_integer(kf, "calendar_settings", "event_blue", m_event_blue);
+	
+	g_key_file_set_integer(kf, "calendar_settings", "holiday_red", m_holiday_red);
+	g_key_file_set_integer(kf, "calendar_settings", "holiday_green", m_holiday_green);
+	g_key_file_set_integer(kf, "calendar_settings", "holiday_blue", m_holiday_blue);
 	
 	g_key_file_set_integer(kf, "calendar_settings", "window_width", m_window_width);
 	g_key_file_set_integer(kf, "calendar_settings", "window_height", m_window_height); 
@@ -859,7 +933,28 @@ static char* replace_newlines(const char *text)
 	}
 	return g_string_free (str, FALSE);
 }
+//======================================================================
 
+char *trim_whitespace(char *s) 
+{
+  // returns a pointer to the (shifted) trimmed string
+  char *original = s;
+  size_t len = 0;
+
+  while (isspace((unsigned char) *s)) {
+    s++;
+  } 
+  if (*s) {
+    char *p = s;
+    while (*p) p++;
+    while (isspace((unsigned char) *(--p)));
+    p[1] = '\0';
+    // len = (size_t) (p - s);   // older errant code
+    len = (size_t) (p - s + 1);  // Thanks to @theriver
+  }
+
+  return (s == original) ? s : memmove(original, s, len + 1);
+}
 
 //=====================================================================
 static int get_month_number(const char* month_str) {
@@ -1288,6 +1383,8 @@ static void callbk_add_new_event(GtkButton *button, gpointer user_data)
 	buffer_description = gtk_entry_get_buffer(GTK_ENTRY(entry_description));
 	m_description = gtk_entry_buffer_get_text(buffer_description);
 	
+	char* description = g_strdup(m_description);//duplicate as const
+	m_description=trim_whitespace(description);
 	m_description = remove_semicolons(m_description);
 	m_description = remove_commas(m_description);
 	m_description =remove_punctuations(m_description);
@@ -1296,6 +1393,8 @@ static void callbk_add_new_event(GtkButton *button, gpointer user_data)
 	buffer_location = gtk_entry_get_buffer(GTK_ENTRY(entry_location));
 	m_location = gtk_entry_buffer_get_text(buffer_location);
 	
+	char* location = g_strdup(m_location);//duplicate as const
+	m_location=trim_whitespace(location);
 	m_location = remove_semicolons(m_location);
 	m_location = remove_commas(m_location);
 	m_location =remove_punctuations(m_location);
@@ -1789,6 +1888,8 @@ static void callbk_update_event(GtkButton *button, gpointer user_data)
 	buffer_description = gtk_entry_get_buffer(GTK_ENTRY(entry_description));
 	m_description = gtk_entry_buffer_get_text(buffer_description);
 	
+	char* description = g_strdup(m_description);//duplicate as const
+	m_description=trim_whitespace(description);
 	m_description = remove_semicolons(m_description);
 	m_description = remove_commas(m_description);
 	m_description =remove_punctuations(m_description);
@@ -1796,6 +1897,8 @@ static void callbk_update_event(GtkButton *button, gpointer user_data)
 	buffer_location = gtk_entry_get_buffer(GTK_ENTRY(entry_location));
 	m_location = gtk_entry_buffer_get_text(buffer_location);
 	
+	char* location = g_strdup(m_location);//duplicate as const	
+	m_location=trim_whitespace(location);
 	m_location = remove_semicolons(m_location);
 	m_location = remove_commas(m_location);
 	m_location =remove_punctuations(m_location);
@@ -1871,10 +1974,11 @@ static void callbk_update_event(GtkButton *button, gpointer user_data)
 	m_start_month = custom_calendar_get_month(CUSTOM_CALENDAR(calendar));
 	m_start_year = custom_calendar_get_year(CUSTOM_CALENDAR(calendar));
 	//g_print("Date is : %d-%d-%d \n", m_start_day, m_start_month,m_start_year);	
-		
-	set_marks_on_calendar_multiday(CUSTOM_CALENDAR(calendar));	
-	custom_calendar_update(CUSTOM_CALENDAR(calendar));
-		
+	
+	set_marks_on_calendar_multiday(CUSTOM_CALENDAR(calendar));
+	set_tooltips_on_calendar(CUSTOM_CALENDAR(calendar));
+	custom_calendar_update(CUSTOM_CALENDAR(calendar));		
+	
 	gtk_window_destroy(GTK_WINDOW(dialog));	
 	
 	
@@ -2441,7 +2545,7 @@ static void callbk_delete_all(GSimpleAction *action, GVariant *parameter,  gpoin
 
 static void callbk_export(GSimpleAction *action, GVariant *parameter,  gpointer user_data)
 {
-	g_print("Export ical file\n");
+	//g_print("Export ical file\n");
 	export_ical_file(); //exports file to current working directory
 }
 
@@ -2629,7 +2733,7 @@ void export_ical_file()
 
 static void callbk_import(GSimpleAction *action, GVariant *parameter,  gpointer user_data)
 {
-	g_print("import events.ical backup file from local directory\n");
+	//g_print("import events.ical backup file from local directory\n");
 	import_ical_file(user_data);
 	
 		
@@ -3126,7 +3230,7 @@ static void callbk_about(GSimpleAction * action, GVariant *parameter, gpointer u
 	gtk_widget_set_size_request(about_dialog, 200,200);
     gtk_window_set_modal(GTK_WINDOW(about_dialog),TRUE);
 	gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about_dialog), "Pi Calendar");
-	gtk_about_dialog_set_version (GTK_ABOUT_DIALOG(about_dialog), "Version 0.1.0");
+	gtk_about_dialog_set_version (GTK_ABOUT_DIALOG(about_dialog), "Version 0.1.1");
 	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about_dialog),"Copyright © 2025");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about_dialog),"Calendar for Raspberry Pi OS");
 	gtk_about_dialog_set_license_type (GTK_ABOUT_DIALOG(about_dialog), GTK_LICENSE_LGPL_2_1);
@@ -4442,6 +4546,47 @@ static void callbk_check_button_upcoming_toggled(GtkCheckButton *check_button, g
 		gtk_widget_set_sensitive(spin_button_upcoming_days, FALSE);
 	}
 }
+//======================================================================
+//spin colour callbks
+
+static void callbk_spin_button_today_red(GtkSpinButton *button, gpointer user_data)
+{	
+	m_today_red = gtk_spin_button_get_value_as_int (button);	
+}
+static void callbk_spin_button_today_green(GtkSpinButton *button, gpointer user_data)
+{	
+	m_today_green = gtk_spin_button_get_value_as_int (button);	
+}
+static void callbk_spin_button_today_blue(GtkSpinButton *button, gpointer user_data)
+{	
+	m_today_blue = gtk_spin_button_get_value_as_int (button);	
+}
+
+static void callbk_spin_button_event_red(GtkSpinButton *button, gpointer user_data)
+{	
+	m_event_red = gtk_spin_button_get_value_as_int (button);	
+}
+static void callbk_spin_button_event_green(GtkSpinButton *button, gpointer user_data)
+{	
+	m_event_green = gtk_spin_button_get_value_as_int (button);	
+}
+static void callbk_spin_button_event_blue(GtkSpinButton *button, gpointer user_data)
+{	
+	m_event_blue = gtk_spin_button_get_value_as_int (button);	
+}
+
+static void callbk_spin_button_holiday_red(GtkSpinButton *button, gpointer user_data)
+{	
+	m_holiday_red = gtk_spin_button_get_value_as_int (button);	
+}
+static void callbk_spin_button_holiday_green(GtkSpinButton *button, gpointer user_data)
+{	
+	m_holiday_green = gtk_spin_button_get_value_as_int (button);	
+}
+static void callbk_spin_button_holiday_blue(GtkSpinButton *button, gpointer user_data)
+{	
+	m_holiday_blue = gtk_spin_button_get_value_as_int (button);	
+}
 
 //======================================================================
 static void callbk_set_preferences(GtkButton *button, gpointer  user_data)
@@ -4457,46 +4602,61 @@ static void callbk_set_preferences(GtkButton *button, gpointer  user_data)
 	GtkWidget *check_button_show_end_time= g_object_get_data(G_OBJECT(button), "check-button-show-end-time-key");
 	GtkWidget *check_button_holidays= g_object_get_data(G_OBJECT(button), "check-button-holidays-key");
 	GtkWidget *check_button_show_tooltips= g_object_get_data(G_OBJECT(button), "check-button-show-tooltips-key");
+			
+	GtkWidget *spin_button_today_red = g_object_get_data(G_OBJECT(button), "spin-today-red-key");
+	GtkWidget *spin_button_today_green= g_object_get_data(G_OBJECT(button), "spin-today-green-key");	
+	GtkWidget *spin_button_today_blue = g_object_get_data(G_OBJECT(button), "spin-today-blue-key");
+	
+	GtkWidget *spin_button_event_red = g_object_get_data(G_OBJECT(button), "spin-event-red-key");
+	GtkWidget *spin_button_event_green= g_object_get_data(G_OBJECT(button), "spin-event-green-key");	
+	GtkWidget *spin_button_event_blue = g_object_get_data(G_OBJECT(button), "spin-event-blue-key");
+	
+	GtkWidget *spin_button_holiday_red = g_object_get_data(G_OBJECT(button), "spin-holiday-red-key");
+	GtkWidget *spin_button_holiday_green= g_object_get_data(G_OBJECT(button), "spin-holiday-green-key");	
+	GtkWidget *spin_button_holiday_blue = g_object_get_data(G_OBJECT(button), "spin-holiday-blue-key");
+	
+	//capture typed values
+	m_today_red= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_today_red));
+	m_today_green= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_today_green));
+	m_today_blue= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_today_blue));
+	
+	m_event_red= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_event_red));
+	m_event_green= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_event_green));
+	m_event_blue= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_event_blue));
+	
+	m_holiday_red= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_holiday_red));
+	m_holiday_green= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_holiday_green));
+	m_holiday_blue= gtk_spin_button_get_value(GTK_SPIN_BUTTON(spin_button_holiday_blue));
+	
+	gchar *m_today_red_str = g_strdup_printf("%i", m_today_red); 
+	gchar *m_today_green_str = g_strdup_printf("%i", m_today_green); 
+	gchar *m_today_blue_str = g_strdup_printf("%i", m_today_blue); 
+	
+	gchar* today_colour_str ="rgb(";
+	today_colour_str=g_strconcat(today_colour_str,m_today_red_str,",",m_today_green_str,",",m_today_blue_str,")",NULL);
+	//g_print("today_colour_str = %s\n",today_colour_str);
+	m_todaycolour =g_strdup(today_colour_str);
+	
+	
+	gchar *m_event_red_str = g_strdup_printf("%i", m_event_red); 
+	gchar *m_event_green_str = g_strdup_printf("%i", m_event_green); 
+	gchar *m_event_blue_str = g_strdup_printf("%i", m_event_blue); 
+	
+	gchar* event_colour_str ="rgb(";
+	event_colour_str=g_strconcat(event_colour_str,m_event_red_str,",",m_event_green_str,",",m_event_blue_str,")",NULL);
+	//g_print("event_colour_str = %s\n",event_colour_str);
+	m_eventcolour =g_strdup(event_colour_str);
+	
+	gchar *m_holiday_red_str = g_strdup_printf("%i", m_holiday_red); 
+	gchar *m_holiday_green_str = g_strdup_printf("%i", m_holiday_green); 
+	gchar *m_holiday_blue_str = g_strdup_printf("%i", m_holiday_blue); 
+	
+	gchar* holiday_colour_str ="rgb(";
+	holiday_colour_str=g_strconcat(holiday_colour_str,m_holiday_red_str,",",m_holiday_green_str,",",m_holiday_blue_str,")",NULL);
+	//g_print("event_colour_str = %s\n",holiday_colour_str);
+	m_holidaycolour =g_strdup(holiday_colour_str);
 		
-	GtkWidget *colour_button_today= g_object_get_data(G_OBJECT(button), "colour-button-today-key");
-	GtkWidget *colour_button_event= g_object_get_data(G_OBJECT(button), "colour-button-event-key");
-	GtkWidget *colour_button_holiday= g_object_get_data(G_OBJECT(button), "colour-button-holiday-key");
-	
-	//colours		
-	GtkEntryBuffer *buffer_todaycolour;
-	GtkWidget *entry_todaycolour = g_object_get_data(G_OBJECT(button), "entry-todaycolour-key");
-	
-	GtkEntryBuffer *buffer_eventcolour;
-	GtkWidget *entry_eventcolour = g_object_get_data(G_OBJECT(button), "entry-eventcolour-key");
-	
-	GtkEntryBuffer *buffer_holidaycolour;
-	GtkWidget *entry_holidaycolour = g_object_get_data(G_OBJECT(button), "entry-holidaycolour-key");
-	
-	
-    buffer_todaycolour = gtk_entry_get_buffer(GTK_ENTRY(entry_todaycolour));
-	const gchar *todaycolour = gtk_entry_buffer_get_text(buffer_todaycolour);	
-	gchar* todaycolour_lower= g_ascii_strdown(todaycolour,-1);
-	m_todaycolour =todaycolour_lower;
-     	
-	buffer_eventcolour = gtk_entry_get_buffer(GTK_ENTRY(entry_eventcolour));
-	const gchar* eventcolour = gtk_entry_buffer_get_text(buffer_eventcolour);
-	gchar* eventcolour_lower=g_ascii_strdown(eventcolour,-1);
-	m_eventcolour =eventcolour_lower;
-	
-	buffer_holidaycolour = gtk_entry_get_buffer(GTK_ENTRY(entry_holidaycolour));
-	const gchar* holidaycolour = gtk_entry_buffer_get_text(buffer_holidaycolour);
-	gchar* holidaycolour_lower=g_ascii_strdown(holidaycolour,-1);
-	m_holidaycolour =holidaycolour_lower;
-	
-	//need more checking here!
-		
-	g_object_set(calendar, "todaycolour", m_todaycolour, NULL);
-	g_object_set(calendar, "eventcolour", m_eventcolour, NULL);
-	g_object_set(calendar, "holidaycolour", m_holidaycolour, NULL);	
-	
-		
-	//speaking
-	
+	//speaking	
 	GtkWidget *check_button_speak= g_object_get_data(G_OBJECT(button), "check-button-speak-key");
     GtkWidget *check_button_speak_startup= g_object_get_data(G_OBJECT(button), "check-button-speak-startup-key");
     GtkWidget *check_button_speak_upcoming= g_object_get_data(G_OBJECT(button), "check-button-speak-upcoming-key");
@@ -4538,6 +4698,17 @@ static void callbk_set_preferences(GtkButton *button, gpointer  user_data)
 	m_todaycolour="rgb(173,216,230)";
 	m_eventcolour="rgb(222,184,135)";
 	m_holidaycolour="rgb(102,205,170)";
+	
+	m_today_red=173;
+	m_today_green=216;
+	m_today_blue =230;	
+	m_event_red=222;
+	m_event_green=184;
+	m_event_blue=135;	
+	m_holiday_red=102;
+	m_holiday_green=205;
+	m_holiday_blue=170;	
+	
 	//speaking
 	m_talk=1;	
 	m_talk_rate=7000;
@@ -4550,6 +4721,10 @@ static void callbk_set_preferences(GtkButton *button, gpointer  user_data)
     m_window_height=500;
 	m_reset_preferences=0; //toggle
 	}
+	
+	g_object_set(calendar, "todaycolour", m_todaycolour, NULL);
+	g_object_set(calendar, "eventcolour", m_eventcolour, NULL);
+	g_object_set(calendar, "holidaycolour", m_holidaycolour, NULL);
 	
 	config_write();	//save preferences
 			
@@ -4564,9 +4739,6 @@ static void callbk_set_preferences(GtkButton *button, gpointer  user_data)
 	
 	gtk_window_destroy(GTK_WINDOW(dialog));	
 }
-
-//======================================================================
-
 
 //======================================================================
 static void callbk_preferences(GSimpleAction* action, GVariant *parameter,gpointer user_data)
@@ -4590,8 +4762,7 @@ static void callbk_preferences(GSimpleAction* action, GVariant *parameter,gpoint
 	GtkWidget *check_button_speak_event_number;
 	GtkWidget *check_button_speak_time;
 	GtkWidget *check_button_speak_event_words;	
-	
-	
+		
 	GtkWidget *label_speak_rate;
 	GtkWidget *spin_button_speak_rate;
 
@@ -4600,19 +4771,22 @@ static void callbk_preferences(GSimpleAction* action, GVariant *parameter,gpoint
 		
 	GtkWidget *check_button_reset_all;		
 	GtkWidget *button_set;	
-	
 		
-	GtkWidget *label_entry_todaycolour;
-	GtkWidget *entry_todaycolour;
-	GtkEntryBuffer *buffer_todaycolour;
+	GtkWidget *label_today_colour;
+	GtkWidget *spin_button_today_red;	
+	GtkWidget *spin_button_today_green;
+	GtkWidget *spin_button_today_blue;
 	
-	GtkWidget *label_entry_eventcolour;
-	GtkWidget *entry_eventcolour;
-	GtkEntryBuffer *buffer_eventcolour;
+	GtkWidget *label_event_colour;
+	GtkWidget *spin_button_event_red;	
+	GtkWidget *spin_button_event_green;
+	GtkWidget *spin_button_event_blue;
 	
-	GtkWidget *label_entry_holidaycolour;
-	GtkWidget *entry_holidaycolour;	
-	GtkEntryBuffer *buffer_holidaycolour; 
+	GtkWidget *label_holiday_colour;
+	GtkWidget *spin_button_holiday_red;	
+	GtkWidget *spin_button_holiday_green;
+	GtkWidget *spin_button_holiday_blue;
+	
 	
 	GtkWidget *label_spacer1;
 	GtkWidget *label_spacer2;
@@ -4633,27 +4807,63 @@ static void callbk_preferences(GSimpleAction* action, GVariant *parameter,gpoint
 	
 	grid = gtk_grid_new();	
 	gtk_grid_set_column_homogeneous(GTK_GRID(grid), TRUE);
-		
-		
-	label_entry_todaycolour = gtk_label_new("Today Colour");
-	entry_todaycolour = gtk_entry_new();
-	gtk_entry_set_max_length(GTK_ENTRY(entry_todaycolour), 50);
-	buffer_todaycolour = gtk_entry_buffer_new(m_todaycolour, -1); // show current colour
-	gtk_entry_set_buffer(GTK_ENTRY(entry_todaycolour), buffer_todaycolour);
-		
-	label_entry_eventcolour = gtk_label_new("Event Colour");
-	entry_eventcolour = gtk_entry_new();
-	gtk_entry_set_max_length(GTK_ENTRY(entry_eventcolour), 50);
-	buffer_eventcolour = gtk_entry_buffer_new(m_eventcolour, -1); // show current colour
-	gtk_entry_set_buffer(GTK_ENTRY(entry_eventcolour), buffer_eventcolour);
-	
-	label_entry_holidaycolour = gtk_label_new("Public Holiday Colour");
-	entry_holidaycolour = gtk_entry_new();
-	gtk_entry_set_max_length(GTK_ENTRY(entry_holidaycolour), 50);
-	buffer_holidaycolour = gtk_entry_buffer_new(m_holidaycolour, -1); // show current colour
-	gtk_entry_set_buffer(GTK_ENTRY(entry_holidaycolour), buffer_holidaycolour);
 	
 	
+	//Colour Adjustments
+	// value,lower,upper,step_increment,page_increment,page_size
+	GtkAdjustment *adjustment_today_red = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);	
+	GtkAdjustment *adjustment_today_green = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);
+	GtkAdjustment *adjustment_today_blue = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);	
+	
+	GtkAdjustment *adjustment_event_red = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);	
+	GtkAdjustment *adjustment_event_green = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);
+	GtkAdjustment *adjustment_event_blue = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);	
+	
+	GtkAdjustment *adjustment_holiday_red = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);	
+	GtkAdjustment *adjustment_holiday_green = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);
+	GtkAdjustment *adjustment_holiday_blue = gtk_adjustment_new(1.00, 0.0, 255.00, 1.0, 1.0, 0.0);
+		
+	label_today_colour =gtk_label_new("Today Colour (RGB): ");	
+	spin_button_today_red = gtk_spin_button_new(adjustment_today_red, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_today_red), "value_changed", G_CALLBACK(callbk_spin_button_today_red), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_today_red), m_today_red);
+	
+	spin_button_today_green = gtk_spin_button_new(adjustment_today_green, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_today_green), "value_changed", G_CALLBACK(callbk_spin_button_today_green), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_today_green), m_today_green);
+	
+	spin_button_today_blue = gtk_spin_button_new(adjustment_today_blue, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_today_blue), "value_changed", G_CALLBACK(callbk_spin_button_today_blue), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_today_blue), m_today_blue);
+	
+	
+	label_event_colour =gtk_label_new("Event Colour (RGB): ");	
+	spin_button_event_red = gtk_spin_button_new(adjustment_event_red, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_event_red), "value_changed", G_CALLBACK(callbk_spin_button_event_red), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_event_red), m_event_red);
+	
+	spin_button_event_green = gtk_spin_button_new(adjustment_event_green, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_event_green), "value_changed", G_CALLBACK(callbk_spin_button_event_green), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_event_green), m_event_green);
+	
+	spin_button_event_blue = gtk_spin_button_new(adjustment_event_blue, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_event_blue), "value_changed", G_CALLBACK(callbk_spin_button_event_blue), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_event_blue), m_event_blue);
+	
+	
+	label_holiday_colour =gtk_label_new("Public Holiday Colour (RGB): ");	
+	spin_button_holiday_red = gtk_spin_button_new(adjustment_holiday_red, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_holiday_red), "value_changed", G_CALLBACK(callbk_spin_button_holiday_red), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_holiday_red), m_holiday_red);
+	
+	spin_button_holiday_green = gtk_spin_button_new(adjustment_holiday_green, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_holiday_green), "value_changed", G_CALLBACK(callbk_spin_button_holiday_green), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_holiday_green), m_holiday_green);
+	
+	spin_button_holiday_blue = gtk_spin_button_new(adjustment_holiday_blue, 1.0, 0);	
+	g_signal_connect(GTK_SPIN_BUTTON(spin_button_holiday_blue), "value_changed", G_CALLBACK(callbk_spin_button_holiday_blue), NULL);	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin_button_holiday_blue), m_holiday_blue);
+			
 	button_set = gtk_button_new_with_label ("Set Preferences");
 	g_signal_connect (button_set, "clicked", G_CALLBACK (callbk_set_preferences), window);
 
@@ -4737,10 +4947,18 @@ static void callbk_preferences(GSimpleAction* action, GVariant *parameter,gpoint
 	g_object_set_data(G_OBJECT(button_set), "spin-upcoming-days-key", spin_button_upcoming_days);
 	
 	//colours
-	g_object_set_data(G_OBJECT(button_set), "entry-todaycolour-key", entry_todaycolour);
-	g_object_set_data(G_OBJECT(button_set), "entry-eventcolour-key", entry_eventcolour);	
-	g_object_set_data(G_OBJECT(button_set), "entry-holidaycolour-key", entry_holidaycolour);
+	//need to capture spin button values in case these are typed	
+	g_object_set_data(G_OBJECT(button_set), "spin-today-red-key", spin_button_today_red);
+	g_object_set_data(G_OBJECT(button_set), "spin-today-green-key", spin_button_today_green);
+	g_object_set_data(G_OBJECT(button_set), "spin-today-blue-key", spin_button_today_blue);
 	
+	g_object_set_data(G_OBJECT(button_set), "spin-event-red-key", spin_button_event_red);
+	g_object_set_data(G_OBJECT(button_set), "spin-event-green-key", spin_button_event_green);
+	g_object_set_data(G_OBJECT(button_set), "spin-event-blue-key", spin_button_event_blue);
+	
+	g_object_set_data(G_OBJECT(button_set), "spin-holiday-red-key", spin_button_holiday_red);
+	g_object_set_data(G_OBJECT(button_set), "spin-holiday-green-key", spin_button_holiday_green);
+	g_object_set_data(G_OBJECT(button_set), "spin-holiday-blue-key", spin_button_holiday_blue);
 	
 	g_object_set_data(G_OBJECT(button_set), "check-button-reset-all-key",check_button_reset_all);
 	
@@ -4754,14 +4972,21 @@ static void callbk_preferences(GSimpleAction* action, GVariant *parameter,gpoint
 	
 	gtk_grid_attach(GTK_GRID(grid), label_spacer1,       1, 3, 1, 1);
 	
-	gtk_grid_attach(GTK_GRID(grid), label_entry_todaycolour,         1, 4, 1, 1);
-	gtk_grid_attach(GTK_GRID(grid), entry_todaycolour,       2, 4, 1, 1);
 	
-	gtk_grid_attach(GTK_GRID(grid), label_entry_eventcolour,         1, 5, 1, 1);
-	gtk_grid_attach(GTK_GRID(grid), entry_eventcolour,       2, 5, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), label_today_colour,          1, 4, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_today_red,       2, 4, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_today_green,      3, 4, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_today_blue,     4, 4, 1, 1);
 	
-	gtk_grid_attach(GTK_GRID(grid), label_entry_holidaycolour,        1, 6, 1, 1);
-	gtk_grid_attach(GTK_GRID(grid), entry_holidaycolour,       2, 6, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), label_event_colour,          1, 5, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_event_red,       2, 5, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_event_green,      3, 5, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_event_blue,     4, 5, 1, 1);
+	
+	gtk_grid_attach(GTK_GRID(grid), label_holiday_colour,         1, 6, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_holiday_red,       2, 6, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_holiday_green,     3, 6, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), spin_button_holiday_blue,    4, 6, 1, 1);
 	
 	gtk_grid_attach(GTK_GRID(grid), label_spacer2,       1, 7, 1, 1);
 	
@@ -4772,21 +4997,20 @@ static void callbk_preferences(GSimpleAction* action, GVariant *parameter,gpoint
 			
 	gtk_grid_attach(GTK_GRID(grid), check_button_speak_startup,       1, 9, 1, 1);		
 	gtk_grid_attach(GTK_GRID(grid), check_button_speak_event_number,  2, 9, 1, 1);	
-	gtk_grid_attach(GTK_GRID(grid), check_button_speak_time,          3, 9, 1, 1);		
+	gtk_grid_attach(GTK_GRID(grid), check_button_speak_time,          3, 9, 1, 1);	
+	gtk_grid_attach(GTK_GRID(grid), check_button_speak_event_words,   4, 9, 1, 1);	
 	
-	gtk_grid_attach(GTK_GRID(grid), check_button_speak_event_words,   1, 10, 1, 1);	
-	
-	gtk_grid_attach(GTK_GRID(grid), check_button_speak_upcoming,      1, 11, 1, 1);	
-	gtk_grid_attach(GTK_GRID(grid), label_upcoming_days,             2, 11, 1, 1);		
-	gtk_grid_attach(GTK_GRID(grid), spin_button_upcoming_days,       3, 11, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), check_button_speak_upcoming,      1, 10, 1, 1);	
+	gtk_grid_attach(GTK_GRID(grid), label_upcoming_days,             2, 10, 1, 1);		
+	gtk_grid_attach(GTK_GRID(grid), spin_button_upcoming_days,       3, 10, 1, 1);
 		
-	gtk_grid_attach(GTK_GRID(grid), label_spacer3,       1, 12, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), label_spacer3,       1, 11, 1, 1);
 	
-	gtk_grid_attach(GTK_GRID(grid), check_button_reset_all,  1, 13, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), check_button_reset_all,  1, 12, 1, 1);
 	
-	gtk_grid_attach(GTK_GRID(grid), label_spacer4,       1, 14, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), label_spacer4,       1, 13, 1, 1);
 	
-	gtk_grid_attach(GTK_GRID(grid), button_set,  1, 15, 3, 1);
+	gtk_grid_attach(GTK_GRID(grid), button_set,  1, 14, 4, 1);
 	
     gtk_window_set_child (GTK_WINDOW (dialog), grid);	
 	gtk_window_present(GTK_WINDOW(dialog));
@@ -4828,7 +5052,7 @@ static void callbk_row_activated (GtkListBox *listbox,GtkListBoxRow *row, gpoint
 {
 	m_row_index = gtk_list_box_row_get_index (row);
 	//m_index = gtk_list_box_row_get_index (row);
-	g_print("m_row_index = %d\n",m_row_index);
+	//g_print("m_row_index = %d\n",m_row_index);
 	DisplayItem *obj = g_list_model_get_item (G_LIST_MODEL (m_store), m_row_index);
 	if(obj==NULL) return;
 	gint id_value;
@@ -4847,7 +5071,7 @@ static void callbk_row_activated (GtkListBox *listbox,GtkListBoxRow *row, gpoint
 	g_object_get (selected_evt, "eventid", &evt_id, NULL);
 	g_object_get (selected_evt, "summary", &summary_str, NULL);
 	g_object_get (selected_evt, "location", &location_str, NULL);	
-	g_print("selected event: id = %d summary = %s location = %s\n",evt_id, summary_str, location_str);		
+	//g_print("selected event: id = %d summary = %s location = %s\n",evt_id, summary_str, location_str);		
 }
 
 //======================================================================
@@ -5140,12 +5364,12 @@ static void set_tooltips_on_calendar(CustomCalendar *calendar)
 	{		
 	time_str =get_time_str(start_hour,start_min);   	
     //tooltip_str = g_strconcat(tooltip_str, time_str, summary_str, "\n",location_str, NULL);
-    tooltip_str = g_strconcat(tooltip_str, time_str, description_str, "\n",location_str, NULL);
+    tooltip_str = g_strconcat(tooltip_str, time_str, summary_str, "\n", description_str, "\n",location_str, NULL);
    } //if !all_day	
    else
    {	   
 	   //tooltip_str = g_strconcat(tooltip_str, summary_str, "\n",location_str, NULL);
-	   tooltip_str = g_strconcat(tooltip_str, description_str, "\n",location_str, NULL);
+	   tooltip_str = g_strconcat(tooltip_str, summary_str, "\n", description_str, "\n",location_str, NULL);
     }
 	custom_calendar_set_tooltip_str(CUSTOM_CALENDAR(calendar), start_day, tooltip_str); 		
 	
