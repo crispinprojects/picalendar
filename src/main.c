@@ -5229,33 +5229,31 @@ static void display_event_array(GArray *evt_arry) {
 				//time_str = g_strconcat(time_str, NULL);
 			}
 			
+			display_str = g_strconcat(display_str, summary_str, ". ", NULL);
+			
+			display_str = g_strconcat(display_str, "\n",  time_str, NULL);
+			
+			if (!strlen(description_str) == 0){
+			display_str = g_strconcat(display_str, description_str, NULL);
+			}
+						
 			if (m_show_location)
 			{
-				if (strlen(location_str) == 0)
-				{
-					//db sorted
-					display_str = g_strconcat(display_str, time_str, summary_str, ". ", NULL);
+				if (!strlen(location_str) == 0)
+				{					
+					display_str = g_strconcat(display_str, ". ",location_str, ".", NULL);
 				}
-				else
-				{
-					display_str = g_strconcat(display_str, time_str, summary_str, ". ",location_str, ".", NULL);
-				}
+				
 			}
-			else
-			{
-				display_str = g_strconcat(display_str, time_str, summary_str, ".", NULL);
-			}
-
+			
 			if (is_priority)
 			{
-				display_str = g_strconcat(display_str, " High Priority.", NULL);
+				display_str = g_strconcat(display_str, "\n","High Priority.", NULL);
 			}
 
-			if (!strlen(description_str) == 0){
-			display_str = g_strconcat(display_str, "\n", description_str, NULL);
-			}
+			
 
-			// Display day events
+			// Display day events db sorted
 
 			if (is_allday)
 			{
