@@ -2536,12 +2536,21 @@ static void callbk_confirm_delete_all(GtkButton *button, gpointer  user_data)
 	GtkWidget *dialog = g_object_get_data(G_OBJECT(button), "dialog-key");
 	
 	db_delete_all();
-			
-	//set_titles_on_calendar(CUSTOM_CALENDAR(calendar)); 
+	
+
 	custom_calendar_reset_marks(CUSTOM_CALENDAR(calendar));	
 	set_marks_on_calendar_multiday(CUSTOM_CALENDAR(calendar));
 	set_tooltips_on_calendar(CUSTOM_CALENDAR(calendar));
 	custom_calendar_update(CUSTOM_CALENDAR(calendar));
+	
+	//update listview day events	
+	g_list_store_remove_all(m_store); // clear	
+	GArray *evt_arry_day;	
+	evt_arry_day = g_array_new(FALSE, FALSE, sizeof(CALENDAR_TYPE_EVENT)); // setup arraylist
+	db_get_all_events_year_month_day(evt_arry_day, m_start_year,m_start_month, m_start_day);		
+	display_event_array(evt_arry_day);
+	g_array_free(evt_arry_day, FALSE); //clear the array 
+	
 	 		
 	//custom_calendar_update(CUSTOM_CALENDAR(calendar));
 	gtk_window_destroy(GTK_WINDOW(dialog));
@@ -3269,7 +3278,7 @@ static void callbk_about(GSimpleAction * action, GVariant *parameter, gpointer u
 	gtk_widget_set_size_request(about_dialog, 200,200);
     gtk_window_set_modal(GTK_WINDOW(about_dialog),TRUE);
 	gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(about_dialog), "Pi Calendar");
-	gtk_about_dialog_set_version (GTK_ABOUT_DIALOG(about_dialog), "Version 0.2.0");
+	gtk_about_dialog_set_version (GTK_ABOUT_DIALOG(about_dialog), "Version 0.2.1");
 	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about_dialog),"Copyright © 2025");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about_dialog),"Calendar for Raspberry Pi OS");
 	gtk_about_dialog_set_license_type (GTK_ABOUT_DIALOG(about_dialog), GTK_LICENSE_LGPL_2_1);

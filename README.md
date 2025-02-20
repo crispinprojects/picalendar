@@ -1,8 +1,8 @@
-# Pi Calendar (Raspberry Pi OS)
+# Pi Calendar (Raspberry Pi Calendar)
 
-Pi Calendar is a personal desktop calendar for use with Raspberry Pi OS (64 bit) which is a port of Debian Bookworm for Raspberry Pi desktops and uses the Wayland compositor called [labwc](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) by default. 
+Pi Calendar is a personal desktop calendar for use with [Raspberry Pi OS (64 bit)](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) which uses the Wayland compositor called [labwc](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) by default.  Raspberry Pi OS (64-bit) is a port of Debian Bookworm and can be used with both Raspberry Pi 4 and 5 single-board computers.
 
-Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/) and tested with Raspberry Pi 4. Apart from  having standard calendar functionality, Pi Calendar has it own built-in speech engine for speaking dates, times and event words. Day events can be read out when the calendar is started as well as upcoming events. A screenshot of Pi Calendar is shown below.
+Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/) and tested with both Raspberry Pi 4 and Raspberry Pi 500. Apart from  having standard calendar functionality, Pi Calendar has it own built-in speech engine for speaking dates, times and event words. Day events can be read out when the calendar is started as well as upcoming events. A screenshot of Pi Calendar is shown below.
 
 ![](picalendar.png)
 
@@ -15,31 +15,41 @@ Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/) an
 * export and import iCalendar files (backup and restore)
 * Sqlite3 database used to store events
 * built-in word concatenation speech synthesizer (date, time and event word speaker)
-* tested with Raspberry Pi 4
+* tested with Raspberry Pi 4 and Raspberry Pi 500.
 
 ### Prebuilt Binary
 
 A 64-bit prebuilt binary for the latest version of Pi Calendar is available and can be downloaded from the binary directory. This has been built using GTK 4.8 and tested with Raspberry Pi OS (64-bit) on a Pi 4. 
 
-Extract the downloaded file which contains the picalendar executable. Assuming that the GTK4 base libraries are installed the Pi Calendar binary can be run from the terminal using:
+You first need to install the GTK 4 libraries from the terminal using the command below.
+
+```
+sudo apt install libgtk-4-dev
+```
+
+Then download and extract the Pi Calendar program (called picalendar found inside the binary folder) and store it where you place your applications in your home folder. For example, create a directory called "Software" in your home folder and then inside this a folder called "picalendar" e.g. ~/Software/picalendar. Copy the Pi Calendar executable and calendar.png image into this. Open the folder and change the picalendar file permissions so that be run as an executable program using the command below.
+
+```
+sudo chmod +x picalendar
+```
+
+The Pi Calendar binary can be run from the terminal using:
 
 ```
 ./picalendar
 ```
 
-or double click on the "picalendar" file. Pi Calendar must have executable permissions to execute. If it does not then right click on the Pi Calendar binary file and choose Properties->Permissions and tick allow "Executable as Program".
-
 ### Create App Menu Launcher
 
-You can create a Pi Calendar launcher so that it can be run from the application menu.
+You can create a Pi Calendar launcher so that it can be run from the system application menu.
 
-First create a directory in your home folder for the Pi Calendar application. For example, create a directory called "Software" in your home folder and then inside this a folder called "picalendar" e.g. ~/Software/picalendar. Copy the Pi Calendar executable and calendar.png image into this.
-
-Now launch the Main Menu Editor using "Preferences->Main Menu Editor" and create a new item as shown in the example below.
+Launch the Main Menu Editor using "Preferences->Main Menu Editor" and create a new item as shown in the example below.
 
 ![](picalendar-launcher.png)
 
-You can now run Pi Calendar from the system menu. You can also add the Pi Calendar launcher to the taskbar (launcher) or desktop by right clicking on it from within the Main Menu Editor. The calendar database will be stored in your home directory if using this approach.
+In this example the picalendar program is stored in "Software/picalendar" created in the home folder.
+
+You can now run Pi Calendar from the system menu. You can also add the Pi Calendar launcher to the taskbar (launcher) or desktop by right clicking on it from within the Main Menu Editor. The calendar database by default will be stored in your home directory if using this approach but you can change the file (Desktop Entry) properties so that the working directory is "Software/picalendar" The calendar.db database will now stored here (you may have to log in and out for this to take place).
 
 ## Calendar Usage
 
@@ -159,16 +169,16 @@ sqlite3 --version
 With both Raspbeery Pi OS (and Debian Bookworm) you need to install the following packages to compile Pi Calendar.
 
 ```
-apt install build-essential
-apt install libgtk-4-dev
-apt install libasound2-dev
+sudo apt install build-essential
+sudo apt install libgtk-4-dev
+sudo apt install libasound2-dev
 ```
 
 The packages:
 
 ```
-apt install libglib2.0-dev
-apt install alsa-utils
+sudo apt install libglib2.0-dev
+sudo apt install alsa-utils
 ```
 
 are needed but should be installed by default. If using the binary you need to ensure that the package libgtk-4-1 is installed
