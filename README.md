@@ -1,8 +1,8 @@
 # Pi Calendar (Raspberry Pi OS)
 
-Pi Calendar is a personal desktop calendar for use with Raspberry Pi OS (64 bit). It has some speech capability using its own built-in speech engine for speaking dates, times and event words. Raspberry Pi OS (64 bit) is a port of Debian Bookworm for Raspberry Pi desktops and now uses the Wayland compositor called [labwc](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) by default. 
+Pi Calendar is a personal desktop calendar for use with Raspberry Pi OS (64 bit) which is a port of Debian Bookworm for Raspberry Pi desktops and uses the Wayland compositor called [labwc](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) by default. 
 
-Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/). The speech synthesizer is based on concatenating and playing back pre-recorded English words. A screenshot of Pi Calendar is shown below.
+Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/) and tested with Raspberry Pi 4. Apart from  having standard calendar functionality, Pi Calendar has it own built-in speech engine for speaking dates, times and event words. Day events can be read out when the calendar is started as well as upcoming events. A screenshot of Pi Calendar is shown below.
 
 ![](picalendar.png)
 
@@ -11,6 +11,7 @@ Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/). T
 * built with C and GTK 4.8.3 arm 64
 * month-view calendar 
 * event details, location, start and end time can be entered and edited
+* multiday events displayed
 * export and import iCalendar files (backup and restore)
 * Sqlite3 database used to store events
 * built-in word concatenation speech synthesizer (date, time and event word speaker)
@@ -59,6 +60,10 @@ If you have used a calendar application before then using Pi Calendar will be st
 A screenshot of the new event dialog is shown below.
 
 ![](picalendar-new-event.png)
+
+A multiday event is displayed on the calendar as shown below.
+
+![](picalendar-multiday.png)
 
 ### Editing Existing Event
 
