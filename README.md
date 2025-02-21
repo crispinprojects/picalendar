@@ -98,7 +98,9 @@ A screenshot of the new event dialog is shown below.
 
 ![](picalendar-new-event.png)
 
-A multiday event is displayed on the calendar as shown below.
+A multiday event can be created and displayed on the calendar as shown below.
+
+![](picalendar-new-event-multiday.png)
 
 ![](picalendar-multiday.png)
 
