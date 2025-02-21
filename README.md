@@ -45,7 +45,7 @@ The Pi Calendar binary can be run from the terminal using:
 
 To add Pi Calendar to the system menu modify the Pi Calendar desktop file provided in the download. A desktop file has a .desktop extension and provides metadata about an application such as its name, icon, command to execute and other properties. For user-specific applications desktop files can be located locally in the ***~/.local/share/applications/***  directory. Local user entries take precedence over system entries. 
 
-The "org.gtk.picalendar.desktop" file is shown below where the user name is "pi" and the working directory is "/home/pi/Software/picalendar" You need to modify this using your own user name and directory locations. For example, the executable path would be "Exec=/home/your-user-name/Software/picalendar/picalendar". The Exec variable defines the command to execute when launching an application, in this case, the "picalendar" binary executable. The Path variable tells the system where to look for the executable and the calendar database. The Icon variable specifies the path to the icon file associated with the application. In a .desktop file, you need to use absolute and full paths.
+The "org.gtk.picalendar.desktop" file is shown below where the user name is "pi" and the working directory is "/home/pi/Software/picalendar" You need to modify this using your own user name and directory locations. For example, the executable path would be "Exec=/home/your-user-name/Software/picalendar/picalendar". The Exec variable defines the command to execute when launching an application, in this case, the "picalendar" binary executable. The Icon variable specifies the path to the icon file associated with the application. In a .desktop file, you need to use absolute and full paths.
 
 ```
 [Desktop Entry]
@@ -54,20 +54,29 @@ Type=Application
 Name=Pi Calendar
 Comment=Calendar for Raspberry Pi
 Icon=/home/pi/Software/picalendar/calendar.png
-Path=/home/pi/Software/picalendar
 Exec=/home/pi/Software/picalendar/picalendar
 X-GNOME-UsesNotifications=true
 Categories=Calendar;Office;
 MimeType=text/calendar;
 ```
 
-Copy your modified  "org.gtk.speakingcalendar.desktop" file to the ***~/.local/share/applications/***  hiden directory (tick the "Show Hidden Files" option in the file explorer to show this) using the terminal command below.
+Use the terminal to copy your modified  "org.gtk.speakingcalendar.desktop" file to ***~/.local/share/applications/***   using the terminal command below.
 
 ```
 cp org.gtk.picalendar.desktop /home/pi/.local/share/applications
 ```
 
+Note that this is a hidden directory and you need to tick the "Show Hidden Files" option in the file explorer to display it.
+
 You can now run Pi Calendar from the system menu. It is located in the "Office Category". If you right click on the Pi Calendar menu entry you can use "Add to Launcher" to add it to the system taskbar. You can also use "Add to Desktop".
+
+By default the calendar database (calendar.db) is stored in the user home directory. Assuming that this is the case you can autostart Pi calendar at boot using the command below.
+
+```
+cp org.gtk.picalendar.desktop /home/pi/.config/autostart
+```
+
+Again change "pi" for your user name. Create the autostart directory it does not exist. To stop Pi Calendar starting at boot just delete the desktop file from the autostart directory.
 
 ## Calendar Usage
 
