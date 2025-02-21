@@ -1,6 +1,6 @@
 # Pi Calendar (Calendar for the Raspberry Pi)
 
-Pi Calendar is a personal desktop calendar for use with [Raspberry Pi OS (64 bit)](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/)  Raspberry Pi OS (64-bit) is a port of Debian Bookworm and can be used with both Raspberry Pi 4 and 5 single-board computers. It uses the Wayland compositor called [labwc](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) by default.
+Pi Calendar is a personal desktop calendar for use with [Raspberry Pi OS (64 bit)](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/).  Raspberry Pi OS (64-bit) is a port of Debian Bookworm and can be used with both Raspberry Pi 4 and 5 single-board computers. It uses the Wayland compositor called [labwc](https://github.com/labwc/labwc) by default.
 
 Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/) and tested with both Raspberry Pi 4 and Raspberry Pi 500. Apart from  having standard calendar functionality, Pi Calendar has it own built-in speech engine for speaking dates, times and event words. Day events can be read out when the calendar is started as well as upcoming events. A screenshot of Pi Calendar is shown below.
 
@@ -70,13 +70,13 @@ Note that this is a hidden directory and you need to tick the "Show Hidden Files
 
 You can now run Pi Calendar from the system menu. It is located in the "Office Category". If you right click on the Pi Calendar menu entry you can use "Add to Launcher" to add it to the system taskbar. You can also use "Add to Desktop".
 
-By default the calendar database (calendar.db) is stored in the user home directory. Assuming that this is the case you can autostart Pi calendar at boot using the command below.
+By default the calendar database (called calendar.db) is stored in the user home directory. Assuming that this is the case you can autostart Pi calendar at boot by copying the Pi Calendar desktop file to the user autostart directory as shown below..
 
 ```
 cp org.gtk.picalendar.desktop /home/pi/.config/autostart
 ```
 
-Again change "pi" for your user name. Create the autostart directory it does not exist. To stop Pi Calendar starting at boot just delete the desktop file from the autostart directory.
+Again change "pi" for your user name. Create the autostart directory it does not already exist. To stop Pi Calendar starting at boot just delete the desktop file located in the autostart directory.
 
 ## Calendar Usage
 
@@ -170,32 +170,9 @@ The parser will be updated with new features in future releases.
 
 ## Build From Source
 
-The C source code for the Pi Calendar application is provided in the src directory.
+The C source code for the Pi Calendar application is provided in the src (source) directory.
 
-[Geany](https://www.geany.org/) can be used as a source code editor for opening, viewing and then compiling the Pi Calendar C code. Geany is lightweight and has an integrated terminal for building the application.
-
-You need the GTK4 development libraries and the gcc compiler. The code has been compiled using GTK 4.8.3 amd64 (Debian 12). To determine which version of GTK4 is running on a Linux system use the following terminal command.
-
-```
-dpkg -l | grep libgtk*
-```
-
-![](rpi-os-gtk4-libraries.png)
-
-To build Pi Calendar you also need the Sqlite3 development libraries. With Debian and Ubuntu you install these using the commands below.
-
-```
-sudo apt install sqlite3
-sudo apt install libsqlite3-dev
-```
-
-To check the installed version use the command below.
-
-```
-sqlite3 --version
-```
-
-With both Raspbeery Pi OS (and Debian Bookworm) you need to install the following packages to compile Pi Calendar.
+You need the GTK4 development libraries and the gcc compiler to build Pi Calendar. Install the following packages .
 
 ```
 sudo apt install build-essential
@@ -210,13 +187,30 @@ sudo apt install libglib2.0-dev
 sudo apt install alsa-utils
 ```
 
-are needed but should be installed by default. If using the binary you need to ensure that the package libgtk-4-1 is installed
+are needed but should be installed by default. 
+
+The code has been compiled using GTK 4.8.3 amd64. To determine which version of GTK4 is running on a Linux system use the following terminal command.
 
 ```
-sudo apt install libgtk-4-1
+dpkg -l | grep libgtk*
 ```
 
-Use the MAKEFILE to compile. 
+![](rpi-os-gtk4-libraries.png)
+
+To build Pi Calendar you also need the Sqlite3 development libraries. You need to install the following packages.
+
+```
+sudo apt install sqlite3
+sudo apt install libsqlite3-dev
+```
+
+To check the installed Sqlite version use the command below.
+
+```
+sqlite3 --version
+```
+
+Use the MAKEFILE to compile Pi Calendar. Just run "make" inside the source code folder.
 
 ```
 make
@@ -227,6 +221,14 @@ To run Pi Calendar from the terminal use
 ```
 ./picalendar
 ```
+
+The binary version of Pi Calendar provided in the download has been compiled with Raspberry Pi OS (64-bit) using the default Wayland compositor [labwc](https://github.com/labwc/labwc) version 0.8.1. To determine the current version of labwc use the command below.
+
+```
+labwc --version
+```
+
+[Geany](https://www.geany.org/) can be used as a source code editor for opening, viewing and then compiling the Pi Calendar C code. Geany is lightweight and has an integrated terminal for building the application.
 
 ## Speech Synthesis
 
