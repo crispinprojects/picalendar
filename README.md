@@ -1,6 +1,6 @@
-# Pi Calendar (Raspberry Pi Calendar)
+# Pi Calendar (Calendar for the Raspberry Pi)
 
-Pi Calendar is a personal desktop calendar for use with [Raspberry Pi OS (64 bit)](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) which uses the Wayland compositor called [labwc](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) by default.  Raspberry Pi OS (64-bit) is a port of Debian Bookworm and can be used with both Raspberry Pi 4 and 5 single-board computers.
+Pi Calendar is a personal desktop calendar for use with [Raspberry Pi OS (64 bit)](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/)  Raspberry Pi OS (64-bit) is a port of Debian Bookworm and can be used with both Raspberry Pi 4 and 5 single-board computers. It uses the Wayland compositor called [labwc](https://www.raspberrypi.com/news/a-new-release-of-raspberry-pi-os/) by default.
 
 Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/) and tested with both Raspberry Pi 4 and Raspberry Pi 500. Apart from  having standard calendar functionality, Pi Calendar has it own built-in speech engine for speaking dates, times and event words. Day events can be read out when the calendar is started as well as upcoming events. A screenshot of Pi Calendar is shown below.
 
@@ -19,15 +19,17 @@ Pi Calendar has been developed using C and [GTK4](https://docs.gtk.org/gtk4/) an
 
 ### Prebuilt Binary
 
-A 64-bit prebuilt binary for the latest version of Pi Calendar is available and can be downloaded from the binary directory. This has been built using GTK 4.8 and tested with Raspberry Pi OS (64-bit) on a Pi 4. 
+A 64-bit prebuilt binary for the latest version of Pi Calendar is available and can be downloaded from the binary directory. This has been built using GTK 4.8 and tested with Raspberry Pi OS (64-bit) on a Pi 4 and Pi 500. 
 
-You first need to install the GTK 4 libraries from the terminal using the command below.
+You first need to install the GTK 4 libraries from the terminal using the commands below.
 
 ```
+sudo apt update
+sudo apt upgrade
 sudo apt install libgtk-4-dev
 ```
 
-Then download and extract the Pi Calendar program (called picalendar found inside the binary folder) and store it where you place your applications in your home folder. For example, create a directory called "Software" in your home folder and then inside this a folder called "picalendar" e.g. ~/Software/picalendar. Copy the Pi Calendar executable and calendar.png image into this. Open the folder and change the picalendar file permissions so that be run as an executable program using the command below.
+Then download and extract the Pi Calendar program (called picalendar found inside the binary folder) and store it where you place your applications in your home folder. For example, create a directory called "Software" in your home folder and then inside this a folder called "picalendar" e.g. ~/Software/picalendar. Copy the Pi Calendar executable and calendar.png image into this. Open the folder in the terminal and change the picalendar file permissions so that be run as an executable program using the command below.
 
 ```
 sudo chmod +x picalendar
@@ -39,17 +41,33 @@ The Pi Calendar binary can be run from the terminal using:
 ./picalendar
 ```
 
-### Create App Menu Launcher
+### Create Menu Entry
 
-You can create a Pi Calendar launcher so that it can be run from the system application menu.
+To add Pi Calendar to the system menu modify the Pi Calendar desktop file provided in the download. A desktop file has a .desktop extension and provides metadata about an application such as its name, icon, command to execute and other properties. For user-specific applications desktop files can be located locally in the ***~/.local/share/applications/***  directory. Local user entries take precedence over system entries. 
 
-Launch the Main Menu Editor using "Preferences->Main Menu Editor" and create a new item as shown in the example below.
+The "org.gtk.picalendar.desktop" file is shown below where the user name is "pi" and the working directory is "/home/pi/Software/picalendar" You need to modify this using your own user name and directory locations. For example, the executable path would be "Exec=/home/your-user-name/Software/picalendar/picalendar". The Exec variable defines the command to execute when launching an application, in this case, the "picalendar" binary executable. The Path variable tells the system where to look for the executable and the calendar database. The Icon variable specifies the path to the icon file associated with the application. In a .desktop file, you need to use absolute and full paths.
 
-![](picalendar-launcher.png)
+```
+[Desktop Entry]
+Version=0.2.1
+Type=Application
+Name=Pi Calendar
+Comment=Calendar for Raspberry Pi
+Icon=/home/pi/Software/picalendar/calendar.png
+Path=/home/pi/Software/picalendar
+Exec=/home/pi/Software/picalendar/picalendar
+X-GNOME-UsesNotifications=true
+Categories=Calendar;Office;
+MimeType=text/calendar;
+```
 
-In this example the picalendar program is stored in "Software/picalendar" created in the home folder.
+Copy your modified  "org.gtk.speakingcalendar.desktop" file to the ***~/.local/share/applications/***  hiden directory (tick the "Show Hidden Files" option in the file explorer to show this) using the terminal command below.
 
-You can now run Pi Calendar from the system menu. You can also add the Pi Calendar launcher to the taskbar (launcher) or desktop by right clicking on it from within the Main Menu Editor. The calendar database by default will be stored in your home directory if using this approach but you can change the file (Desktop Entry) properties so that the working directory is "Software/picalendar" The calendar.db database will now stored here (you may have to log in and out for this to take place).
+```
+cp org.gtk.picalendar.desktop /home/pi/.local/share/applications
+```
+
+You can now run Pi Calendar from the system menu. It is located in the "Office Category". If you right click on the Pi Calendar menu entry you can use "Add to Launcher" to add it to the system taskbar. You can also use "Add to Desktop".
 
 ## Calendar Usage
 
